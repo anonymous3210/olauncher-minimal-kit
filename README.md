@@ -137,6 +137,7 @@ Este projeto permanece sob a licença [GNU GPLv3](LICENSE).
 
 A base original do Olauncher foi criada por [Tanuj Notes](https://github.com/tanujnotes). Esta versão e suas alterações estão mantidas neste repositório por [anonymous3210](https://github.com/anonymous3210).
 
-### Assistência de desenvolvimento
+## Contributors
 
-O trabalho de análise, otimização, documentação e validação desta versão contou com assistência do **Manus AI**, utilizando **Claude Sonnet 5.5**.
+- [anonymous3210](https://github.com/anonymous3210) — manutenção do projeto e integração das alterações.
+- **Manus AI / Claude Sonnet 5.5** — análise, otimização, documentação e validação desta versão.
