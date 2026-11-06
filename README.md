@@ -1,43 +1,138 @@
-![Olauncher](https://repository-images.githubusercontent.com/278638069/db0acb80-661b-11eb-803e-926cae5dccb4)
+# Olauncher Minimal Kit
 
+Launcher Android minimalista, sem anúncios e com foco em leitura rápida, acesso por gestos e baixo custo de renderização. Esta versão combina a base do Olauncher com a interface `MinimalLauncher`, implementada em Jetpack Compose.
 
-# Olauncher | Minimal AF Launcher
-AF stands for Ad-Free! :D
+> Este repositório descreve o estado atual da branch `main`. Ele não representa automaticamente o aplicativo publicado nas lojas Play Store, F-Droid ou IzzyOnDroid.
 
-[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
-    alt="Get it on Play Store"
-    height="80" align="middle">](https://play.google.com/store/apps/details?id=app.olauncher)
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80" align="middle">](https://f-droid.org/packages/app.olauncher)
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png"
-    alt="Get it on IzzyOnDroid"
-    height="54" hspace="13" align="middle">](https://apt.izzysoft.de/packages/app.olauncher)
+## Captura de tela
 
-#### Install using [Play Store,](https://play.google.com/store/apps/details?id=app.olauncher) [F-Droid,](https://f-droid.org/packages/app.olauncher) [IzzyOnDroid](https://apt.izzysoft.de/packages/app.olauncher) or the [latest APK.](https://github.com/tanujnotes/Olauncher/releases/)
+A captura abaixo mostra a tela inicial da versão atual: relógio e data, papel de parede escolhido pelo usuário, botão de configurações e gesto para abrir a gaveta de aplicativos.
 
-To maintain the simplicity of the launcher, a few niche features are available but hidden.
+![Tela inicial do Olauncher Minimal Kit](docs/screenshots/launcher-home.webp)
 
-Please check out the **[About](https://tanujnotes.substack.com/p/olauncher-minimal-af-launcher?utm_source=github)** page in the Olauncher settings for a complete list of features and **FAQs**.
+## O que está implementado
 
-##
+### Tela inicial
 
-License: [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html)
+- Relógio e data em destaque.
+- Papel de parede controlado pelo seletor padrão do Android.
+- Atalho para abrir as configurações do launcher.
+- Atalhos opcionais para câmera, mapas e galeria/fotos.
+- Até oito aplicativos favoritos na tela inicial.
+- Gestos horizontais configuráveis para abrir um aplicativo à esquerda ou à direita.
+- Gesto vertical para abrir a gaveta de aplicativos.
 
-Developer: [@tanujnotes](https://x.com/tanujnotes)
+### Gaveta de aplicativos
 
-##
+- Lista de aplicativos instalados com agrupamento alfabético.
+- Busca sem diferenciação de maiúsculas/minúsculas e tolerante a acentos.
+- Opção para mostrar ou ocultar ícones.
+- Ocultação individual de aplicativos ou ações para mostrar/ocultar todos.
+- Acesso aos detalhes do aplicativo por toque prolongado.
+- Deduplicação de pacotes antes do carregamento dos ícones.
+- Cache reativo da lista de aplicativos para evitar novas varreduras do `PackageManager` ao reabrir a gaveta.
 
-### Other apps from team Olauncher:
+### Aparência e mídia
 
-- [Pro Launcher](https://play.google.com/store/apps/details?id=app.prolauncher) - Pro version of Olauncher with extra features like widgets, weather, folders, etc.
+- Superfície translúcida com gradiente, reflexo e textura sutil.
+- Blur da janela no Android 12 ou superior quando o recurso de blur entre janelas está disponível.
+- Fallback translúcido e escurecido quando o blur nativo não está disponível.
+- Blur dinâmico com ajuste dia/noite.
+- Filtros de papel de parede: normal, preto e branco e sépia.
+- Ajustes de desfoque, opacidade e escurecimento na tela de configurações.
+- Widget opcional de mídia com capa, título, artista, anterior, reproduzir/pausar e próxima.
+- O widget de mídia exige a ativação do acesso às notificações pelo usuário.
 
-- [Note to Self](https://play.google.com/store/apps/details?id=com.makenotetoself) - Free and [open source](https://github.com/jeerovan/ntsapp) notes app with chat like interface and end-to-end encryption.
+### Personalização
 
-- [Pentastic](https://play.google.com/store/apps/details?id=app.pentastic) - Free and [open source](https://github.com/tanujnotes/Pentastic). A minimal tasks, notes and reminders app.
+- Seleção de pacotes de ícones compatíveis com `appfilter.xml`.
+- Preferências persistidas com DataStore.
+- Migração das preferências legadas do Olauncher para a interface atual.
+- Sliders persistidos com debounce para evitar gravações excessivas durante o arraste.
 
-- [Supernova](https://github.com/tanujnotes/Supernova) - Free and [open source](https://github.com/tanujnotes/Supernova) alternative of Nova Launcher.
+## Otimizações incluídas
 
-##
+A versão atual inclui otimizações focadas nos pontos mais caros da interface:
 
-Thank you!
+- carregamento dos aplicativos fora da thread principal;
+- cache reativo compartilhado entre a tela inicial, a gaveta e as configurações;
+- proteção contra carregamentos concorrentes com `Mutex`;
+- ícones reduzidos para `64 × 64` antes de serem armazenados em memória;
+- normalização dos nomes uma única vez para acelerar a busca;
+- remoção das animações individuais e das coroutines por item da gaveta;
+- isolamento do relógio para que o timer não recomponha a Home inteira;
+- uso de `drawWithCache` para o shader da superfície de vidro;
+- atualização do blur da janela somente quando os parâmetros relevantes mudam.
+
+## Requisitos
+
+- Android 8.0 ou superior (`minSdk 26`).
+- Android 12 ou superior é recomendado para o blur nativo entre janelas.
+- JDK 17 para compilar.
+- Android SDK com a plataforma Android 36 e Build Tools compatíveis.
+
+## Compilar
+
+Clone o projeto e entre na branch principal:
+
+```bash
+git clone https://github.com/anonymous3210/olauncher-minimal-kit.git
+cd olauncher-minimal-kit
+git checkout main
+```
+
+Compile o APK de debug:
+
+```bash
+./gradlew assembleDebug
+```
+
+O arquivo será gerado em:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+O APK de debug usa o identificador `app.olauncher.debug` e é assinado com a chave de debug do Android. Para gerar o pacote de release:
+
+```bash
+./gradlew assembleRelease
+```
+
+O release é configurado com `minifyEnabled true` e precisa ser assinado com uma chave de distribuição antes de ser instalado ou publicado.
+
+Para executar os testes unitários:
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+## Instalação local
+
+Com o Android Debug Bridge configurado:
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+Depois da instalação, defina o aplicativo como launcher padrão nas configurações do Android. O aplicativo solicitará apenas as permissões e acessos necessários para recursos opcionais, como o widget de mídia.
+
+## Estrutura do projeto
+
+- `app/`: módulo Android principal, atividade, migração de preferências e integração com a base legada do Olauncher.
+- `launcherkit/`: interface Compose, gaveta, tela inicial, preferências, cache de aplicativos, blur, ícones e widget de mídia.
+- `docs/screenshots/`: capturas de tela usadas na documentação.
+
+A entrada atual da aplicação é `MainActivity`, que hospeda `MinimalLauncher` e migra as preferências legadas antes de mostrar a interface Compose.
+
+## Status da versão
+
+A `main` contém as otimizações de carregamento de aplicativos e renderização da interface. O projeto compila com `assembleDebug` e `testDebugUnitTest` no ambiente configurado com Android SDK e JDK 17.
+
+## Licença
+
+Este projeto permanece sob a licença [GNU GPLv3](LICENSE).
+
+## Créditos
+
+A base original do Olauncher foi criada por [Tanuj Notes](https://github.com/tanujnotes). Esta versão e suas alterações estão mantidas neste repositório por [anonymous3210](https://github.com/anonymous3210).
