@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -58,9 +56,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.SolidColor
-import kotlinx.coroutines.delay
 import com.minimal.launcherkit.data.AppInfo
 import com.minimal.launcherkit.data.Apps
+import com.minimal.launcherkit.data.normalizeLabel
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -86,8 +84,9 @@ internal fun DrawerScreen(
 ) {
     val ctx = LocalContext.current
     var query by remember { mutableStateOf("") }
-    val visible = remember(apps, hidden, query) {
-        apps.filter { it.pkg !in hidden && it.label.contains(query.trim(), ignoreCase = true) }
+    val normalizedQuery = remember(query) { normalizeLabel(query) }
+    val visible = remember(apps, hidden, normalizedQuery) {
+        apps.filter { it.pkg !in hidden && it.normalizedLabel.contains(normalizedQuery) }
     }
     val groups = remember(visible) {
         visible.groupBy { a -> a.label.firstOrNull()?.uppercaseChar()?.takeIf { it.isLetter() } ?: '#' }
@@ -115,42 +114,22 @@ internal fun DrawerScreen(
             contentPadding = PaddingValues(start = 40.dp, end = 100.dp, top = 230.dp, bottom = 140.dp),
         ) {
             if (rows.isEmpty()) item { Text("Nenhum app visível. Abra as configurações para mostrar.", color = LK.Cream, fontSize = 20.sp) }
-            itemsIndexed(rows, key = { _, r -> when (r) { is DrawerItem.Header -> "h" + r.letter; is DrawerItem.Entry -> r.app.pkg } }) { index, r ->
-                var entered by remember(rows) { mutableStateOf(false) }
-                LaunchedEffect(rows) {
-                    delay((index.coerceAtMost(12) * 35L))
-                    entered = true
-                }
-                val entryAlpha = androidx.compose.animation.core.animateFloatAsState(
-                    if (entered) 1f else 0f,
-                    animationSpec = androidx.compose.animation.core.tween(220, easing = LauncherEasing),
-                    label = "drawerEntryAlpha",
-                )
-                val entryOffset = androidx.compose.animation.core.animateDpAsState(
-                    if (entered) 0.dp else 30.dp,
-                    animationSpec = androidx.compose.animation.core.tween(280, easing = LauncherEasing),
-                    label = "drawerEntryOffset",
-                )
-                val entryOffsetPx = with(LocalDensity.current) { entryOffset.value.toPx() }
-                Box(
-                    Modifier.alpha(entryAlpha.value).graphicsLayer { translationY = entryOffsetPx }
-                ) {
-                    when (r) {
-                        is DrawerItem.Header -> Text(r.letter, color = LK.Cream, fontSize = 44.sp, modifier = Modifier.alpha(.9f))
-                        is DrawerItem.Entry -> Row(
-                            Modifier.fillMaxWidth()
-                                .springPressClickable(onClick = { Apps.launch(ctx, r.app.pkg) }, onLongClick = { Apps.details(ctx, r.app.pkg) })
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (showIcons) {
-                                Box(Modifier.size(66.dp).border(4.dp, LK.Cream, CircleShape).padding(7.dp).clip(CircleShape)) {
-                                    Image(r.app.icon, r.app.label, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-                                }
-                                Spacer(Modifier.width(40.dp))
+            items(rows, key = { r -> when (r) { is DrawerItem.Header -> "h" + r.letter; is DrawerItem.Entry -> r.app.pkg } }) { r ->
+                when (r) {
+                    is DrawerItem.Header -> Text(r.letter, color = LK.Cream, fontSize = 44.sp, modifier = Modifier.alpha(.9f))
+                    is DrawerItem.Entry -> Row(
+                        Modifier.fillMaxWidth()
+                            .springPressClickable(onClick = { Apps.launch(ctx, r.app.pkg) }, onLongClick = { Apps.details(ctx, r.app.pkg) })
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (showIcons) {
+                            Box(Modifier.size(66.dp).border(4.dp, LK.Cream, CircleShape).padding(7.dp).clip(CircleShape)) {
+                                Image(r.app.icon, r.app.label, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                             }
-                            Text(r.app.label, color = LK.Cream, fontSize = 30.sp, fontWeight = FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Spacer(Modifier.width(40.dp))
                         }
+                        Text(r.app.label, color = LK.Cream, fontSize = 30.sp, fontWeight = FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

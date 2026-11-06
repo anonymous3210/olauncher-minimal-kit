@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import java.text.Normalizer
 
 /** Ícone é lido do ActivityInfo instalado, não de uma lista de ícones ilustrativos. */
 data class AppInfo(
@@ -13,7 +14,16 @@ data class AppInfo(
     val pkg: String,
     val icon: ImageBitmap,
     val activityName: String = "",
+    val normalizedLabel: String = normalizeLabel(label),
 )
+
+private val combiningMarks = "\\p{Mn}+".toRegex()
+
+internal fun normalizeLabel(value: String): String =
+    Normalizer.normalize(value, Normalizer.Form.NFD)
+        .replace(combiningMarks, "")
+        .lowercase()
+        .trim()
 
 object Apps {
     /** Deve ser executado fora da main thread. Fallback sempre usa o ícone Android real do app. */
@@ -22,6 +32,8 @@ object Apps {
         val pack = IconPackManager.load(ctx, iconPackPackage)
         val main = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         return pm.queryIntentActivities(main, 0)
+            // Deduplicate before loading labels and allocating icon bitmaps.
+            .distinctBy { it.activityInfo?.packageName }
             .mapNotNull { resolveInfo ->
                 val activity = resolveInfo.activityInfo ?: return@mapNotNull null
                 val packageName = activity.packageName
@@ -30,11 +42,10 @@ object Apps {
                 AppInfo(
                     label = resolveInfo.loadLabel(pm).toString(),
                     pkg = packageName,
-                    icon = drawable.toBitmap(128, 128).asImageBitmap(),
+                    icon = drawable.toBitmap(64, 64).asImageBitmap(),
                     activityName = className,
                 )
             }
-            .distinctBy { it.pkg }
             .sortedBy { it.label.lowercase() }
     }
 

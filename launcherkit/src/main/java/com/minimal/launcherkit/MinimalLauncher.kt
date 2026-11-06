@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -38,18 +37,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.minimal.launcherkit.data.AppInfo
 import com.minimal.launcherkit.data.Apps
+import com.minimal.launcherkit.data.AppsRepository
 import com.minimal.launcherkit.data.LauncherPrefs
 import com.minimal.launcherkit.data.PrefsRepo
 import com.minimal.launcherkit.ui.DrawerScreen
 import com.minimal.launcherkit.ui.HomeScreen
 import com.minimal.launcherkit.ui.SettingsScreen
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.LocalTime
 
 private enum class Page { Home, Drawer, Settings }
@@ -63,7 +60,6 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
     val scope = rememberCoroutineScope()
     var page by remember { mutableStateOf(Page.Home) }
     var from by remember { mutableStateOf(Page.Home) }
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var gestureProgress by remember { mutableFloatStateOf(0f) }
     var hour by remember { mutableIntStateOf(LocalTime.now().hour) }
 
@@ -71,10 +67,9 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
         page = Page.Home
         gestureProgress = 0f
     }
-    LaunchedEffect(page, prefs.iconPackPackage) {
-        if (page == Page.Drawer || apps.isEmpty()) {
-            apps = withContext(Dispatchers.IO) { Apps.load(ctx.applicationContext, prefs.iconPackPackage) }
-        }
+    val apps by AppsRepository.apps.collectAsState()
+    LaunchedEffect(prefs.iconPackPackage) {
+        AppsRepository.ensureLoaded(ctx.applicationContext, prefs.iconPackPackage)
     }
 
     val drawerIsBehind = page == Page.Drawer || (page == Page.Settings && from == Page.Drawer)
@@ -101,7 +96,7 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
     )
 
     val dayFactor = if (prefs.dynamicBlur && hour in 7..18) 0.62f else 1f
-    val blurDp = (prefs.blur.coerceIn(0, 60) * dayFactor * glassProgress).dp
+    val blurDp = (prefs.blur.coerceIn(0, 60) * dayFactor).dp
     val backgroundColorFilter = remember(prefs.wallpaperFilter) {
         when (prefs.wallpaperFilter) {
             1 -> ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
@@ -131,15 +126,16 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
     }
     val glassOpacity = if (nativeBlurEnabled) prefs.opacity else maxOf(prefs.opacity, 60)
     val blurRadiusPx = with(LocalDensity.current) { blurDp.roundToPx().coerceAtMost(150) }
+    val windowBlurRadiusPx = if (drawerIsBehind) blurRadiusPx else 0
 
     @Suppress("DEPRECATION")
     LaunchedEffect(window) {
         window?.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
         window?.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
     }
-    SideEffect {
+    LaunchedEffect(window, nativeBlurEnabled, windowBlurRadiusPx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            window?.setBackgroundBlurRadius(if (nativeBlurEnabled) blurRadiusPx else 0)
+            window?.setBackgroundBlurRadius(if (nativeBlurEnabled) windowBlurRadiusPx else 0)
         }
     }
     DisposableEffect(window) {

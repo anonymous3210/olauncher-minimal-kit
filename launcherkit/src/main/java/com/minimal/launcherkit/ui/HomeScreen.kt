@@ -92,9 +92,10 @@ internal fun HomeScreen(
 ) {
     val ctx = LocalContext.current
     var drag by remember { mutableFloatStateOf(0f) }
-    val hhmm = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    val dateFmt = remember { DateTimeFormatter.ofPattern("EEE, MMM d") }
-    val now by produceState(LocalDateTime.now()) { while (true) { value = LocalDateTime.now(); delay(5_000) } }
+    val favoriteVisibleApps = remember(apps, favoriteApps, hidden) {
+        apps.filter { it.pkg in favoriteApps && it.pkg !in hidden }.take(8)
+    }
+    val visibleShortcuts = remember(hidden) { shortcuts.filter { it.key !in hidden } }
 
     Box(
         modifier
@@ -129,14 +130,9 @@ internal fun HomeScreen(
             Icon(Icons.Outlined.Settings, contentDescription = "Configurações", tint = LK.Ink)
         }
         Column(Modifier.padding(horizontal = 30.dp).padding(top = 56.dp)) {
-            Text(
-                now.format(hhmm), color = LK.Ink, fontSize = 112.sp, lineHeight = 112.sp,
-                fontWeight = FontWeight.ExtraLight, letterSpacing = (-2).sp,
-                modifier = Modifier.springPressClickable(onClick = { Apps.startSafe(ctx, Intent(AlarmClock.ACTION_SHOW_ALARMS)) }),
-            )
-            Text(now.format(dateFmt), color = LK.Ink, fontSize = 27.sp, fontWeight = FontWeight.Normal, modifier = Modifier.padding(top = 22.dp, start = 4.dp))
+            ClockDisplay(onClick = { Apps.startSafe(ctx, Intent(AlarmClock.ACTION_SHOW_ALARMS)) })
             if ("h:Music" !in hidden) MediaWidget(Modifier.padding(top = 34.dp))
-            apps.filter { it.pkg in favoriteApps && it.pkg !in hidden }.take(8).forEach { app ->
+            favoriteVisibleApps.forEach { app ->
                 Row(
                     Modifier.fillMaxWidth().padding(top = 18.dp).clip(RoundedCornerShape(12.dp))
                         .springPressClickable(onClick = { Apps.launch(ctx, app.pkg) })
@@ -150,7 +146,7 @@ internal fun HomeScreen(
                     Text(app.label, color = LK.Ink, fontSize = 29.sp)
                 }
             }
-            shortcuts.filter { it.key !in hidden }.forEach { s ->
+            visibleShortcuts.forEach { s ->
                 Row(
                     Modifier.fillMaxWidth().padding(top = 18.dp).clip(RoundedCornerShape(12.dp))
                         .springPressClickable(onClick = { Apps.startSafe(ctx, s.intent()) }).padding(vertical = 12.dp, horizontal = 12.dp),
@@ -165,6 +161,30 @@ internal fun HomeScreen(
         Text(
             "deslize para cima para abrir os apps", color = LK.Ink, fontSize = 14.sp,
             modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp).alpha(.55f),
+        )
+    }
+}
+
+@Composable
+private fun ClockDisplay(onClick: () -> Unit) {
+    val hhmm = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val dateFmt = remember { DateTimeFormatter.ofPattern("EEE, MMM d") }
+    val now by produceState(LocalDateTime.now()) {
+        while (true) {
+            value = LocalDateTime.now()
+            delay(5_000L)
+        }
+    }
+    Column {
+        Text(
+            now.format(hhmm), color = LK.Ink, fontSize = 112.sp, lineHeight = 112.sp,
+            fontWeight = FontWeight.ExtraLight, letterSpacing = (-2).sp,
+            modifier = Modifier.springPressClickable(onClick = onClick),
+        )
+        Text(
+            now.format(dateFmt), color = LK.Ink, fontSize = 27.sp,
+            fontWeight = FontWeight.Normal,
+            modifier = Modifier.padding(top = 22.dp, start = 4.dp),
         )
     }
 }

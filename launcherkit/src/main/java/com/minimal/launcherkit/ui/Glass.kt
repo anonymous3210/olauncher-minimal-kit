@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageShader
@@ -40,14 +40,16 @@ internal fun Modifier.glassSurface(
             )
         ),
         shape,
-    ).drawBehind {
-        drawRect(
-            Brush.verticalGradient(
+    ).drawWithCache {
+        val reflection = Brush.verticalGradient(
                 listOf(Color.White.copy(alpha = .10f), Color.Transparent),
                 endY = size.height * .4f,
             )
-        )
-        drawRect(ShaderBrush(ImageShader(glassGrain, TileMode.Repeated, TileMode.Repeated)))
+        val grain = ShaderBrush(ImageShader(glassGrain, TileMode.Repeated, TileMode.Repeated))
+        onDrawBehind {
+            drawRect(reflection)
+            drawRect(grain)
+        }
     }.border(
         1.dp,
         Brush.verticalGradient(

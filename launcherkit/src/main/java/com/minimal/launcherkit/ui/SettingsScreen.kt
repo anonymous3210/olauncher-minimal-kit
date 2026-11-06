@@ -92,6 +92,24 @@ internal fun SettingsScreen(
     var gestureTarget by remember { mutableStateOf<String?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { notifOn = MediaBridge.isEnabled(ctx) }
     LaunchedEffect(Unit) { packs = withContext(Dispatchers.IO) { IconPackManager.installedPacks(ctx) } }
+    LaunchedEffect(blurV, prefs.blur) {
+        if (blurV.roundToInt() != prefs.blur) {
+            kotlinx.coroutines.delay(250L)
+            onBlur(blurV.roundToInt())
+        }
+    }
+    LaunchedEffect(opacityV, prefs.opacity) {
+        if (opacityV.roundToInt() != prefs.opacity) {
+            kotlinx.coroutines.delay(250L)
+            onOpacity(opacityV.roundToInt())
+        }
+    }
+    LaunchedEffect(overlayV, prefs.overlay) {
+        if (overlayV.roundToInt() != prefs.overlay) {
+            kotlinx.coroutines.delay(250L)
+            onOverlay(overlayV.roundToInt())
+        }
+    }
 
     val sliderColors = SliderDefaults.colors(
         thumbColor = LK.Cream, activeTrackColor = LK.Cream, inactiveTrackColor = LK.Cream.copy(alpha = .25f),
@@ -119,12 +137,12 @@ internal fun SettingsScreen(
             }
             item {
                 LabelValue("Desfoque", "${blurV.roundToInt()} dp")
-                Slider(blurV, { blurV = it; onBlur(it.roundToInt()) }, valueRange = 0f..60f, colors = sliderColors)
+                Slider(blurV, { blurV = it }, valueRange = 0f..60f, colors = sliderColors)
                 LabelValue("Opacidade da gaveta", "${opacityV.roundToInt()}%")
-                Slider(opacityV, { opacityV = it; onOpacity(it.roundToInt()) }, valueRange = 0f..100f, colors = sliderColors)
+                Slider(opacityV, { opacityV = it }, valueRange = 0f..100f, colors = sliderColors)
                 SwitchRow("Blur dinâmico dia/noite", prefs.dynamicBlur, onDynamicBlur)
                 LabelValue("Escurecimento do fundo", "${overlayV.roundToInt()}%")
-                Slider(overlayV, { overlayV = it; onOverlay(it.roundToInt()) }, valueRange = 0f..100f, colors = sliderColors)
+                Slider(overlayV, { overlayV = it }, valueRange = 0f..100f, colors = sliderColors)
                 Text("O sistema desfoca o papel de parede atrás da janela no Android 12+ com efeitos de janela ativos. Sem esse suporte, a gaveta fica translúcida e levemente escurecida.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
             }
 
