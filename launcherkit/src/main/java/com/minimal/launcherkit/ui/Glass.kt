@@ -26,7 +26,7 @@ private val glassGrain by lazy {
     Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
 }
 
-/** Translucent wine tint, soft top reflection, subtle grain and a light edge. */
+/** Neutral graphite tint, soft top reflection, subtle grain and a light edge. */
 internal fun Modifier.glassSurface(
     opacityPercent: Int,
     shape: Shape = RectangleShape,
@@ -35,8 +35,8 @@ internal fun Modifier.glassSurface(
     return background(
         Brush.verticalGradient(
             listOf(
-                Color(0xFF3A2232).copy(alpha = alpha * .90f),
-                Color(0xFF281520).copy(alpha = alpha),
+                Color(0xFF24282D).copy(alpha = alpha * .90f),
+                Color(0xFF171A1E).copy(alpha = alpha),
             )
         ),
         shape,

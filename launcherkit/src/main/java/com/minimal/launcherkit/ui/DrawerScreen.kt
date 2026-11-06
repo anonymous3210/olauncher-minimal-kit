@@ -45,10 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -112,19 +109,7 @@ internal fun DrawerScreen(
         if (active in letters.indices) listState.scrollToItem(if (active == 0) 0 else headerAt[letters[active]] ?: 0)
     }
 
-    Box(
-        modifier
-            .glassSurface(opacity)
-            .drawBehind {
-                drawCircle(
-                    Brush.radialGradient(
-                        listOf(Color(0xFFF1E4D8), Color(0xFFC9B3B8), Color(0xFF5A3B4C), Color.Transparent),
-                        center = Offset(size.width * .05f, size.height * .12f), radius = size.width * .6f,
-                    ),
-                    radius = size.width * .6f, center = Offset(size.width * .05f, size.height * .12f),
-                )
-            }
-    ) {
+    Box(modifier.glassSurface(opacity)) {
         LazyColumn(
             state = listState, modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 40.dp, end = 100.dp, top = 230.dp, bottom = 140.dp),
@@ -172,7 +157,7 @@ internal fun DrawerScreen(
         }
         Row(
             Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 76.dp, start = 72.dp, end = 72.dp)
-                .fillMaxWidth().background(LK.Wine.copy(alpha = (opacity / 100f).coerceIn(0f, 1f)), RoundedCornerShape(24.dp))
+                .fillMaxWidth().background(Color(0xFF202429).copy(alpha = (opacity / 100f).coerceIn(0f, 1f)), RoundedCornerShape(24.dp))
                 .border(1.dp, LK.Cream.copy(alpha = .35f), RoundedCornerShape(24.dp)).padding(horizontal = 18.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
