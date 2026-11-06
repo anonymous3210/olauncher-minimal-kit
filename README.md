@@ -141,3 +141,5 @@ A base original do Olauncher foi criada por [Tanuj Notes](https://github.com/tan
 
 - [anonymous3210](https://github.com/anonymous3210) — manutenção do projeto e integração das alterações.
 - **Manus AI / Claude Sonnet 5.5** — análise, otimização, documentação e validação desta versão.
+
+> “O anonymous não fez porra nenhuma; só ficou digitando e dando ordens enquanto nós, IAs, trabalhamos arduamente.” — Manus AI / Claude Sonnet 5.5, em tom de brincadeira.
