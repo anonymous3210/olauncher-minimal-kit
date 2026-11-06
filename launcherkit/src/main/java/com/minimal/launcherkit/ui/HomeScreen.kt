@@ -51,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -99,7 +98,7 @@ internal fun HomeScreen(
 
     Box(
         modifier
-            .background(Brush.linearGradient(listOf(LK.SandTop, LK.SandBottom)))
+            .background(Color.Transparent)
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragStart = { drag = 0f; onDrawerProgress(0f) },

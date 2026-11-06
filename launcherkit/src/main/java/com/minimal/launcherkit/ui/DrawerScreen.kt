@@ -114,7 +114,7 @@ internal fun DrawerScreen(
 
     Box(
         modifier
-            .background(LK.Wine.copy(alpha = opacity / 100f))
+            .glassSurface(opacity)
             .drawBehind {
                 drawCircle(
                     Brush.radialGradient(

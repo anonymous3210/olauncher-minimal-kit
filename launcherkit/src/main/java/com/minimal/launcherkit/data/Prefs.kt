@@ -14,9 +14,9 @@ private val Context.launcherStore by preferencesDataStore("launcherkit")
 
 data class LauncherPrefs(
     val hidden: Set<String> = emptySet(),
-    /** Intensity from 0–100%; converted to 0–40dp for Compose blur. */
-    val blur: Int = 45,
-    val opacity: Int = 80,
+    /** Android window blur radius, in dp. */
+    val blur: Int = 28,
+    val opacity: Int = 45,
     val showIcons: Boolean = true,
     val iconPackPackage: String = "",
     val dynamicBlur: Boolean = true,
@@ -30,7 +30,7 @@ data class LauncherPrefs(
 
 class PrefsRepo(private val ctx: Context) {
     private val hiddenKey = stringSetPreferencesKey("hidden")
-    private val blurKey = intPreferencesKey("blur_percent")
+    private val blurKey = intPreferencesKey("blur")
     private val opacityKey = intPreferencesKey("opacity")
     private val showIconsKey = booleanPreferencesKey("show_icons")
     private val iconPackKey = stringPreferencesKey("icon_pack_package")
@@ -45,8 +45,8 @@ class PrefsRepo(private val ctx: Context) {
     val flow: Flow<LauncherPrefs> = ctx.launcherStore.data.map { data ->
         LauncherPrefs(
             hidden = data[hiddenKey] ?: emptySet(),
-            blur = data[blurKey] ?: 45,
-            opacity = data[opacityKey] ?: 80,
+            blur = data[blurKey] ?: 28,
+            opacity = data[opacityKey] ?: 45,
             showIcons = data[showIconsKey] ?: true,
             iconPackPackage = data[iconPackKey] ?: "",
             dynamicBlur = data[dynamicBlurKey] ?: true,
@@ -78,7 +78,7 @@ class PrefsRepo(private val ctx: Context) {
     }
 
     suspend fun setHiddenAll(keys: Set<String>) { ctx.launcherStore.edit { it[hiddenKey] = keys } }
-    suspend fun setBlur(percent: Int) { ctx.launcherStore.edit { it[blurKey] = percent.coerceIn(0, 100) } }
+    suspend fun setBlur(radiusDp: Int) { ctx.launcherStore.edit { it[blurKey] = radiusDp.coerceIn(0, 60) } }
     suspend fun setOpacity(percent: Int) { ctx.launcherStore.edit { it[opacityKey] = percent.coerceIn(0, 100) } }
     suspend fun setShowIcons(enabled: Boolean) { ctx.launcherStore.edit { it[showIconsKey] = enabled } }
     suspend fun setIconPack(packageName: String) { ctx.launcherStore.edit { it[iconPackKey] = packageName } }

@@ -66,6 +66,7 @@ private val homeKeys = listOf("h:Music" to "Widget de música", "h:Camera" to "C
 internal fun SettingsScreen(
     apps: List<AppInfo>,
     prefs: LauncherPrefs,
+    glassOpacity: Int,
     onBack: () -> Unit,
     onToggle: (key: String, hide: Boolean) -> Unit,
     onSetHidden: (Set<String>) -> Unit,
@@ -97,7 +98,7 @@ internal fun SettingsScreen(
     )
     val currentPackName = packs.firstOrNull { it.packageName == prefs.iconPackPackage }?.label ?: "Sistema"
 
-    Box(modifier.background(LK.Wine)) {
+    Box(modifier.glassSurface(glassOpacity)) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 28.dp, end = 28.dp, top = 120.dp, bottom = 60.dp),
@@ -107,24 +108,24 @@ internal fun SettingsScreen(
             item { SectionTitle("Aparência da gaveta") }
             item {
                 Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(16.dp)).background(LK.SandTop)) {
-                    Canvas(Modifier.fillMaxSize().blur((blurV * .4f).dp)) {
+                    Canvas(Modifier.fillMaxSize().blur(blurV.dp)) {
                         drawCircle(Color(0xFF4F8A2C), 45.dp.toPx(), androidx.compose.ui.geometry.Offset(70.dp.toPx(), 60.dp.toPx()))
                         drawCircle(Color(0xFFD7AA2C), 35.dp.toPx(), androidx.compose.ui.geometry.Offset(size.width - 70.dp.toPx(), 70.dp.toPx()))
                     }
-                    Box(Modifier.fillMaxSize().background(LK.Wine.copy(alpha = opacityV / 100f)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxSize().glassSurface(opacityV.roundToInt()), contentAlignment = Alignment.Center) {
                         Text("Prévia", color = LK.Cream, fontSize = 20.sp)
                     }
                 }
             }
             item {
-                LabelValue("Desfoque", "${blurV.roundToInt()}%")
-                Slider(blurV, { blurV = it; onBlur(it.roundToInt()) }, valueRange = 0f..100f, colors = sliderColors)
+                LabelValue("Desfoque", "${blurV.roundToInt()} dp")
+                Slider(blurV, { blurV = it; onBlur(it.roundToInt()) }, valueRange = 0f..60f, colors = sliderColors)
                 LabelValue("Opacidade da gaveta", "${opacityV.roundToInt()}%")
                 Slider(opacityV, { opacityV = it; onOpacity(it.roundToInt()) }, valueRange = 0f..100f, colors = sliderColors)
                 SwitchRow("Blur dinâmico dia/noite", prefs.dynamicBlur, onDynamicBlur)
                 LabelValue("Escurecimento do fundo", "${overlayV.roundToInt()}%")
                 Slider(overlayV, { overlayV = it; onOverlay(it.roundToInt()) }, valueRange = 0f..100f, colors = sliderColors)
-                Text("No Android 12 ou superior o desfoque é real; o nível acompanha o gesto de abrir a gaveta.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
+                Text("O sistema desfoca o papel de parede atrás da janela no Android 12+ com efeitos de janela ativos. Sem esse suporte, a gaveta fica translúcida e levemente escurecida.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
             }
 
             item { SectionTitle("Ícones dos aplicativos") }

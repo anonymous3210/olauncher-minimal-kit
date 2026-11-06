@@ -1,5 +1,9 @@
 package com.minimal.launcherkit
 
+import android.graphics.Color as AndroidColor
+import android.graphics.drawable.ColorDrawable
+import android.os.Build
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -10,7 +14,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -20,8 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -32,6 +36,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.minimal.launcherkit.data.AppInfo
 import com.minimal.launcherkit.data.Apps
@@ -81,14 +86,22 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
             }
         }
     }
-    val targetProgress = if (drawerIsBehind) 1f else gestureProgress.coerceIn(0f, 1f)
+
+    val targetDrawerProgress = if (drawerIsBehind) 1f else gestureProgress.coerceIn(0f, 1f)
     val drawerProgress by animateFloatAsState(
-        targetValue = targetProgress,
+        targetValue = targetDrawerProgress,
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
         label = "drawerProgress",
     )
+    val targetGlassProgress = if (page == Page.Home) gestureProgress.coerceIn(0f, 1f) else 1f
+    val glassProgress by animateFloatAsState(
+        targetValue = targetGlassProgress,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
+        label = "glassProgress",
+    )
+
     val dayFactor = if (prefs.dynamicBlur && hour in 7..18) 0.62f else 1f
-    val blurDp = (prefs.blur.coerceIn(0, 100) * 0.4f * dayFactor * drawerProgress).dp
+    val blurDp = (prefs.blur.coerceIn(0, 60) * dayFactor * glassProgress).dp
     val backgroundColorFilter = remember(prefs.wallpaperFilter) {
         when (prefs.wallpaperFilter) {
             1 -> ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
@@ -110,13 +123,41 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
         }
     }
 
-    Box(modifier.fillMaxSize().background(Color.Black)) {
+    val window = remember(ctx) { ctx.findActivity()?.window }
+    val nativeBlurEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        rememberCrossWindowBlur()
+    } else {
+        false
+    }
+    val glassOpacity = if (nativeBlurEnabled) prefs.opacity else maxOf(prefs.opacity, 60)
+    val blurRadiusPx = with(LocalDensity.current) { blurDp.roundToPx().coerceAtMost(150) }
+
+    @Suppress("DEPRECATION")
+    LaunchedEffect(window) {
+        window?.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
+        window?.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+    }
+    SideEffect {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            window?.setBackgroundBlurRadius(if (nativeBlurEnabled) blurRadiusPx else 0)
+        }
+    }
+    DisposableEffect(window) {
+        onDispose {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) window?.setBackgroundBlurRadius(0)
+        }
+    }
+
+    val nightTint = prefs.dynamicBlur && (hour >= 19 || hour < 7)
+    val overlayColor = if (nightTint) Color(0xFF7A4B30) else Color.Black
+
+    Box(modifier.fillMaxSize().background(Color.Transparent)) {
         val homeModifier = Modifier.fillMaxSize()
-            .then(if (drawerProgress > 0.001f && blurDp > 0.5.dp) Modifier.blur(blurDp) else Modifier)
+            .graphicsLayer { alpha = 1f - glassProgress }
             .drawWithCache {
                 val filterPaint = Paint().apply { colorFilter = backgroundColorFilter }
                 onDrawWithContent {
-                    if (drawerIsBehind && backgroundColorFilter != null) {
+                    if (backgroundColorFilter != null) {
                         drawIntoCanvas { canvas ->
                             canvas.saveLayer(Rect(Offset.Zero, size), filterPaint)
                             drawContent()
@@ -125,13 +166,9 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
                     } else {
                         drawContent()
                     }
-                    if (drawerIsBehind && prefs.overlay > 0) {
-                        val nightTint = prefs.dynamicBlur && (hour >= 19 || hour < 7)
-                        val overlayColor = if (nightTint) Color(0xFF7A4B30) else Color.Black
-                        drawRect(overlayColor.copy(alpha = prefs.overlay.coerceIn(0, 100) / 100f * drawerProgress))
-                    }
                 }
             }
+
         HomeScreen(
             hidden = prefs.hidden,
             apps = apps,
@@ -145,11 +182,19 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
             modifier = homeModifier,
         )
 
+        if (glassProgress > 0.001f && prefs.overlay > 0) {
+            Box(
+                Modifier.fillMaxSize()
+                    .graphicsLayer { alpha = glassProgress }
+                    .background(overlayColor.copy(alpha = prefs.overlay.coerceIn(0, 100) / 100f))
+            )
+        }
+
         if (drawerProgress > 0.001f || page == Page.Drawer || (page == Page.Settings && from == Page.Drawer)) {
             DrawerScreen(
                 apps = apps,
                 hidden = prefs.hidden,
-                opacity = prefs.opacity,
+                opacity = glassOpacity,
                 showIcons = prefs.showIcons,
                 progress = drawerProgress,
                 onBack = { gestureProgress = 0f; page = Page.Home },
@@ -169,6 +214,7 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
             SettingsScreen(
                 apps = apps,
                 prefs = prefs,
+                glassOpacity = glassOpacity,
                 onBack = { page = from },
                 onToggle = { key, hide -> scope.launch { repo.setHidden(key, hide) } },
                 onSetHidden = { scope.launch { repo.setHiddenAll(it) } },
