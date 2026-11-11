@@ -14,11 +14,14 @@ import androidx.work.WorkManager
 import app.olauncher.data.Constants
 import app.olauncher.data.Prefs
 import com.minimal.launcherkit.MinimalLauncher
+import com.minimal.launcherkit.data.AppsRepository
 import com.minimal.launcherkit.data.PrefsRepo
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private var homeTick by mutableIntStateOf(0)
+    private var hasResumedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,5 +62,16 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         homeTick++
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (hasResumedOnce) {
+            lifecycleScope.launch {
+                val prefs = PrefsRepo(applicationContext).flow.first()
+                AppsRepository.refresh(applicationContext, prefs.iconPackPackage)
+            }
+        }
+        hasResumedOnce = true
     }
 }

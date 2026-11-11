@@ -22,8 +22,9 @@ class WallpaperWorker(appContext: Context, workerParams: WorkerParameters) : Cor
                 if (prefs.dailyWallpaperUrl == wallpaperUrl)
                     true
                 else {
-                    prefs.dailyWallpaperUrl = wallpaperUrl
-                    setWallpaper(applicationContext, wallpaperUrl)
+                    val applied = setWallpaper(applicationContext, wallpaperUrl)
+                    if (applied) prefs.dailyWallpaperUrl = wallpaperUrl
+                    applied
                 }
             } else
                 true

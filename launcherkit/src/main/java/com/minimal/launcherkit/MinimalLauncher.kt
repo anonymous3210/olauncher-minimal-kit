@@ -135,12 +135,20 @@ fun MinimalLauncher(modifier: Modifier = Modifier, resetSignal: Int = 0) {
     }
     LaunchedEffect(window, nativeBlurEnabled, windowBlurRadiusPx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            window?.let { SamsungBlurCompat.setEnabled(it, false) }
             window?.setBackgroundBlurRadius(if (nativeBlurEnabled) windowBlurRadiusPx else 0)
+        } else {
+            window?.let {
+                SamsungBlurCompat.setEnabled(it, drawerIsBehind && windowBlurRadiusPx > 0)
+            }
         }
     }
     DisposableEffect(window) {
         onDispose {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) window?.setBackgroundBlurRadius(0)
+            window?.let {
+                SamsungBlurCompat.setEnabled(it, false)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) it.setBackgroundBlurRadius(0)
+            }
         }
     }
 

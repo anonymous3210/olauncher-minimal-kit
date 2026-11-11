@@ -143,7 +143,7 @@ internal fun SettingsScreen(
                 SwitchRow("Blur dinâmico dia/noite", prefs.dynamicBlur, onDynamicBlur)
                 LabelValue("Escurecimento do fundo", "${overlayV.roundToInt()}%")
                 Slider(overlayV, { overlayV = it }, valueRange = 0f..100f, colors = sliderColors)
-                Text("O sistema desfoca o papel de parede atrás da janela no Android 12+ com efeitos de janela ativos. Sem esse suporte, a gaveta fica translúcida e levemente escurecida.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
+                Text("O launcher usa o blur nativo no Android 12+ e tenta automaticamente o blur Samsung no Android 11. Se o aparelho não oferecer suporte, a gaveta usa o fallback translúcido.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
             }
 
             item { SectionTitle("Ícones dos aplicativos") }
@@ -152,13 +152,14 @@ internal fun SettingsScreen(
                 SettingAction("Pacote de ícones", currentPackName) { packDialog = true }
             }
 
-            item { SectionTitle("Filtro do fundo") }
+            item { SectionTitle("Filtro dos elementos da tela inicial") }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterPill("Normal", prefs.wallpaperFilter == 0, Modifier.weight(1f)) { onWallpaperFilter(0) }
                     FilterPill("P&B", prefs.wallpaperFilter == 1, Modifier.weight(1f)) { onWallpaperFilter(1) }
                     FilterPill("Sépia", prefs.wallpaperFilter == 2, Modifier.weight(1f)) { onWallpaperFilter(2) }
                 }
+                Text("O filtro afeta os elementos da Home; o papel de parede é controlado pelo Android.", color = LK.Cream.copy(alpha = .6f), fontSize = 14.sp)
             }
             item { SettingAction("Papel de parede", "Abrir seletor do Android") { Apps.startSafe(ctx, Intent(Intent.ACTION_SET_WALLPAPER)) } }
 
